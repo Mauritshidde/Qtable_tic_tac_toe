@@ -10,16 +10,26 @@ class TicTacToe {
     public:
         TicTacToe();
         void play();
+        void restartBoard();
         // int move();
         void printBoard();
         bool CheckWin(char sign);
+
+        int winsP1;
+        int winsP2;
     private:
         char board[9] = {'-', '-', '-', '-', '-', '-', '-', '-', '-'};
         bool player1;
+        int rewardP1, rewardP2;
+        std::vector<std::vector<char>> statesP1, statesP2;
+        std::vector<int>  actionsP1, actionsP2;
+        Qlearning Qtable;
 };
 
 TicTacToe::TicTacToe() {
     player1 = true;
+    winsP1 = 0;
+    winsP2 = 0;
 }
 
 void TicTacToe::printBoard() {
@@ -41,9 +51,18 @@ void TicTacToe::printBoard() {
     std::cout << std::endl;
 }
 
+void TicTacToe::restartBoard() {
+    for (int i=0; i < 9; i++) {
+        board[i] = '-';
+    }
+}
+
 void TicTacToe::play() {
-    Qlearning Qtable;
     bool door = true;
+    statesP1.clear();
+    statesP2.clear();
+    actionsP1.clear();
+    actionsP2.clear();
     while(door) {
         if (player1) {
             bool notplaced = true;
@@ -51,51 +70,57 @@ void TicTacToe::play() {
             for (int i=0; i < 9; i++) {
                 boardvec1.push_back(board[i]);
             }
+            statesP1.push_back(boardvec1);
+            int choice;
             while (notplaced) {
-                int choice = Qtable.makeDecision(&boardvec1);
+                choice = Qtable.makeDecision(&boardvec1);
                 if (board[choice] == '-') {
                     notplaced = false;
                     board[choice] = 'X';
                 }
             }
+            actionsP1.push_back(choice);
             player1 = false;
             Qtable.saveQtable();
 
-            int reward;
             if (CheckWin('X')) {
-                reward = 100;
+                rewardP1 = 100;
+                rewardP2 = -100;
+                winsP1++;
                 door = false;
-            } else {
-                reward = 10;
             }
+
             std::vector<char> boardvec;
             for (int i=0; i < 9; i++) {
                 boardvec.push_back(board[i]);
             }
-            // Qtable.Reward(&boardvec, reward);
         } else {
             bool notplaced = true;
             std::vector<char> boardvec1;
             for (int i=0; i < 9; i++) {
                 boardvec1.push_back(board[i]);
             }
+            statesP2.push_back(boardvec1);
+            int choice;
             while (notplaced) {
-                int choice = Qtable.makeDecision(&boardvec1);
+                choice = Qtable.makeDecision(&boardvec1);
                 if (board[choice] == '-') {
                     notplaced = false;
                     board[choice] = 'O';
                 }
             }
+            actionsP2.push_back(choice);
             player1 = true;
             Qtable.saveQtable();
 
             int reward;
             if (CheckWin('O')) {
-                reward = 100;
+                rewardP2 = 100;
+                rewardP1 = -100;
+                winsP2++;
                 door = false;
-            } else {
-                reward = 10;
             }
+            
             std::vector<char> boardvec;
             for (int i=0; i < 9; i++) {
                 boardvec.push_back(board[i]);
@@ -110,7 +135,16 @@ void TicTacToe::play() {
         }
         if (placesLeft == 0) {
             door = false;
+            rewardP1 = 10;
+            rewardP2 = 10;
         }
+    }
+    Qtable.saveQtable();
+    for (int i=0; i < statesP1.size(); i++) {
+        Qtable.Reward(&statesP1.at(i), rewardP1, actionsP1.at(i));
+    }
+    for (int i=0; i < statesP2.size(); i++) {
+        Qtable.Reward(&statesP2.at(i), rewardP2, actionsP2.at(i));
     }
     Qtable.saveQtable();
 }
@@ -130,7 +164,11 @@ int main() {
     srand(time(NULL));
     TicTacToe spel;
     spel.printBoard();
-    spel.play();
+    for (int i=0; i < 1000000; i++) {
+        spel.play();
+        spel.restartBoard();
+    }
+    std::cout << spel.winsP1 << " wins player 1 " << spel.winsP2 << " wins player 2 " << std::endl;
     
     return 0;
 }
