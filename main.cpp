@@ -17,13 +17,13 @@ class TicTacToe {
 
         int winsP1;
         int winsP2;
+        Qlearning Qtable;
     private:
         char board[9] = {'-', '-', '-', '-', '-', '-', '-', '-', '-'};
         bool player1;
         int rewardP1, rewardP2;
         std::vector<std::vector<char>> statesP1, statesP2;
         std::vector<int>  actionsP1, actionsP2;
-        Qlearning Qtable;
 };
 
 TicTacToe::TicTacToe() {
@@ -126,7 +126,7 @@ void TicTacToe::play() {
                 boardvec.push_back(board[i]);
             }
         }
-        printBoard();
+        // printBoard();
         int placesLeft = 0;
         for (int i=0; i < 9; i++) {
             if (board[i] == '-') {
@@ -153,7 +153,7 @@ bool TicTacToe::CheckWin(char sign) {
     if ((board[0] == sign && board[1] == sign && board[2] == sign) || (board[3] == sign && board[4] == sign && board[5] == sign) 
     || (board[6] == sign && board[7] == sign && board[8] == sign) || (board[0] == sign && board[3] == sign && board[6] == sign) 
     || (board[1] == sign && board[4] == sign && board[7] == sign) || (board[2] == sign && board[5] == sign && board[8] == sign)
-    || (board[0] == sign && board[4] == sign && board[9] == sign) || (board[2] == sign && board[4] == sign && board[7] == sign)) {
+    || (board[0] == sign && board[4] == sign && board[8] == sign) || (board[2] == sign && board[4] == sign && board[6] == sign)) {
         return true;
     } else {
         return false;
@@ -164,11 +164,23 @@ int main() {
     srand(time(NULL));
     TicTacToe spel;
     spel.printBoard();
-    for (int i=0; i < 1000000; i++) {
+    float epsilon = 1;
+    for (int i=0; i < epsilon; epsilon-=0.1) {
+        for (int i=0; i < 1000; i++) {
+            spel.play();
+            spel.restartBoard();
+        }
+        // epsilon -= 0.1;
+        std::cout << spel.winsP1 << " wins player 1 " << spel.winsP2 << " wins player 2 " << 1000-spel.winsP1-spel.winsP2 << " draw " << std::endl;
+        spel.winsP1 = 0;
+        spel.winsP2 = 0;
+        spel.Qtable.SetEpsilon(epsilon);
+    }
+    spel.Qtable.SetEpsilon(1);
+    for (int i=0; i < 5000; i++) {
         spel.play();
         spel.restartBoard();
     }
-    std::cout << spel.winsP1 << " wins player 1 " << spel.winsP2 << " wins player 2 " << std::endl;
-    
+    std::cout << spel.winsP1 << " wins player 1 " << spel.winsP2 << " wins player 2 " << 1-spel.winsP1-spel.winsP2 << " draw " << std::endl;
     return 0;
 }
